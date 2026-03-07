@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOC Home Lab — Network Diagram</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap');
+
+  :root {
+    --bg: #060a0f;
+    --panel: #0b1118;
+    --border: #1a2a3a;
+    --accent-blue: #00d4ff;
+    --accent-green: #00ff88;
+    --accent-red: #ff3d5a;
+    --accent-orange: #ff8c00;
+    --accent-purple: #8b5cf6;
+    --text: #c8d8e8;
+    --text-dim: #4a6a7a;
+    --glow-blue: 0 0 20px rgba(0,212,255,0.3);
+    --glow-green: 0 0 20px rgba(0,255,136,0.3);
+    --glow-red: 0 0 20px rgba(255,61,90,0.3);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    font-family: 'Rajdhani', sans-serif;
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 24px 60px;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    margin-bottom: 48px;
+    animation: fadeDown 0.8s ease both;
+  }
+
+  .header-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--accent-blue);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    opacity: 0.8;
+  }
+
+  .header h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(22px, 4vw, 36px);
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: 2px;
+    text-shadow: 0 0 40px rgba(0,212,255,0.5);
+  }
+
+  .header h1 span { color: var(--accent-blue); }
+
+  .header-sub {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 10px;
+    letter-spacing: 2px;
+  }
+
+  /* Status bar */
+  .status-bar {
+    display: flex;
+    justify-content: center;
+    gap: 28px;
+    margin-bottom: 48px;
+    flex-wrap: wrap;
+    animation: fadeDown 0.8s 0.1s ease both;
+  }
+
+  .status-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+  }
+
+  .status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+  .dot-green { background: var(--accent-green); box-shadow: 0 0 8px var(--accent-green); }
+  .dot-red { background: var(--accent-red); box-shadow: 0 0 8px var(--accent-red); }
+  .dot-blue { background: var(--accent-blue); box-shadow: 0 0 8px var(--accent-blue); }
+
+  /* Network boundary */
+  .network-boundary {
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    position: relative;
+    background: rgba(11,17,24,0.6);
+    backdrop-filter: blur(10px);
+    animation: fadeUp 0.8s 0.2s ease both;
+  }
+
+  .network-boundary::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 16px;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(0,212,255,0.3), transparent 40%, rgba(0,255,136,0.2));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  .boundary-label {
+    position: absolute;
+    top: -13px;
+    left: 32px;
+    background: var(--bg);
+    padding: 0 12px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--accent-blue);
+    text-transform: uppercase;
+  }
+
+  .boundary-label-right {
+    position: absolute;
+    top: -13px;
+    right: 32px;
+    background: var(--bg);
+    padding: 0 12px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+  }
+
+  /* VM Grid */
+  .vm-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    margin-bottom: 32px;
+  }
+
+  /* VM Cards */
+  .vm-card {
+    border-radius: 12px;
+    padding: 24px;
+    position: relative;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    cursor: default;
+  }
+
+  .vm-card:hover { transform: translateY(-4px); }
+
+  .vm-card.attacker {
+    background: linear-gradient(135deg, rgba(255,61,90,0.08), rgba(11,17,24,0.9));
+    border: 1px solid rgba(255,61,90,0.3);
+  }
+  .vm-card.attacker:hover { box-shadow: var(--glow-red); }
+
+  .vm-card.defender {
+    background: linear-gradient(135deg, rgba(0,255,136,0.08), rgba(11,17,24,0.9));
+    border: 1px solid rgba(0,255,136,0.3);
+  }
+  .vm-card.defender:hover { box-shadow: var(--glow-green); }
+
+  .vm-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 18px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .vm-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .vm-icon.red { background: rgba(255,61,90,0.15); border: 1px solid rgba(255,61,90,0.3); }
+  .vm-icon.green { background: rgba(0,255,136,0.15); border: 1px solid rgba(0,255,136,0.3); }
+
+  .vm-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #fff;
+  }
+
+  .vm-subtitle {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    margin-top: 2px;
+  }
+
+  .vm-ip {
+    margin-left: auto;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  .ip-red { background: rgba(255,61,90,0.1); color: var(--accent-red); border: 1px solid rgba(255,61,90,0.2); }
+  .ip-green { background: rgba(0,255,136,0.1); color: var(--accent-green); border: 1px solid rgba(0,255,136,0.2); }
+
+  /* Service tags */
+  .services {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+
+  .tag {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .tag-red { background: rgba(255,61,90,0.08); color: #ff7a8a; border: 1px solid rgba(255,61,90,0.2); }
+  .tag-green { background: rgba(0,255,136,0.08); color: #4dffaa; border: 1px solid rgba(0,255,136,0.2); }
+  .tag-blue { background: rgba(0,212,255,0.08); color: #4dd8ff; border: 1px solid rgba(0,212,255,0.2); }
+  .tag-orange { background: rgba(255,140,0,0.08); color: #ffa040; border: 1px solid rgba(255,140,0,0.2); }
+  .tag-purple { background: rgba(139,92,246,0.08); color: #a78bfa; border: 1px solid rgba(139,92,246,0.2); }
+
+  .tag-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+  .tdot-red { background: var(--accent-red); }
+  .tdot-green { background: var(--accent-green); }
+  .tdot-blue { background: var(--accent-blue); }
+  .tdot-orange { background: var(--accent-orange); }
+  .tdot-purple { background: var(--accent-purple); }
+
+  /* Connection arrows */
+  .connections {
+    position: relative;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 8px;
+  }
+
+  .conn-line {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+  }
+
+  .conn-svg {
+    width: 100%;
+    height: 60px;
+    overflow: visible;
+  }
+
+  /* Bridge network bar */
+  .bridge-bar {
+    background: linear-gradient(90deg, transparent, rgba(0,212,255,0.08), rgba(0,212,255,0.12), rgba(0,212,255,0.08), transparent);
+    border: 1px solid rgba(0,212,255,0.2);
+    border-radius: 8px;
+    padding: 12px 24px;
+    text-align: center;
+    margin-bottom: 32px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .bridge-bar::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(0,212,255,0.1), transparent);
+    animation: shimmer 3s infinite;
+  }
+
+  .bridge-label {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--accent-blue);
+    text-transform: uppercase;
+  }
+
+  .bridge-detail {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 4px;
+    letter-spacing: 1px;
+  }
+
+  /* Traffic flows */
+  .traffic-flows {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+
+  .flow-card {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    background: rgba(11,17,24,0.7);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .flow-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 2px;
+  }
+  .flow-attack::after { background: linear-gradient(90deg, transparent, var(--accent-red), transparent); }
+  .flow-log::after { background: linear-gradient(90deg, transparent, var(--accent-blue), transparent); }
+  .flow-alert::after { background: linear-gradient(90deg, transparent, var(--accent-green), transparent); }
+
+  .flow-icon { font-size: 20px; margin-bottom: 6px; }
+  .flow-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #fff;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+  }
+  .flow-desc {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  /* Tech stack footer */
+  .tech-stack {
+    border-top: 1px solid var(--border);
+    padding-top: 24px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+  }
+
+  .tech-badge {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    letter-spacing: 1px;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    background: rgba(255,255,255,0.02);
+    transition: all 0.2s ease;
+  }
+  .tech-badge:hover {
+    border-color: var(--accent-blue);
+    color: var(--accent-blue);
+    background: rgba(0,212,255,0.05);
+  }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    margin-top: 40px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    animation: fadeUp 0.8s 0.5s ease both;
+  }
+
+  /* Animations */
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  @keyframes shimmer {
+    0% { left: -60%; }
+    100% { left: 160%; }
+  }
+  @keyframes dash {
+    to { stroke-dashoffset: -20; }
+  }
+
+  /* Responsive */
+  @media (max-width: 640px) {
+    .vm-grid { grid-template-columns: 1fr; }
+    .traffic-flows { grid-template-columns: 1fr; }
+    .vm-ip { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-label">// SOC Home Lab Environment</div>
+    <h1>CYBER<span>OPS</span> LAB</h1>
+    <div class="header-sub">VIRTUALBOX · BRIDGE NETWORK · WAZUH SIEM · DVWA</div>
+  </div>
+
+  <!-- Status bar -->
+  <div class="status-bar">
+    <div class="status-item"><span class="status-dot dot-green"></span>WAZUH SIEM ACTIVE</div>
+    <div class="status-item"><span class="status-dot dot-red"></span>ATTACKER NODE LIVE</div>
+    <div class="status-item"><span class="status-dot dot-blue"></span>DVWA RUNNING</div>
+    <div class="status-item"><span class="status-dot dot-green"></span>UFW FIREWALL ON</div>
+  </div>
+
+  <!-- Network Boundary -->
+  <div class="network-boundary">
+    <div class="boundary-label">◈ VIRTUALBOX BRIDGE NETWORK</div>
+    <div class="boundary-label-right">192.168.1.0/24</div>
+
+    <!-- VM Grid -->
+    <div class="vm-grid">
+
+      <!-- Attacker VM -->
+      <div class="vm-card attacker">
+        <div class="vm-header">
+          <div class="vm-icon red">🐉</div>
+          <div>
+            <div class="vm-title">KALI LINUX</div>
+            <div class="vm-subtitle">ATTACKER NODE</div>
+          </div>
+          <div class="vm-ip ip-red">192.168.1.16</div>
+        </div>
+        <div class="services">
+          <span class="tag tag-red"><span class="tag-dot tdot-red"></span>Nmap / Recon</span>
+          <span class="tag tag-red"><span class="tag-dot tdot-red"></span>Metasploit</span>
+          <span class="tag tag-red"><span class="tag-dot tdot-red"></span>SQLmap</span>
+          <span class="tag tag-red"><span class="tag-dot tdot-red"></span>Hydra</span>
+          <span class="tag tag-red"><span class="tag-dot tdot-red"></span>Nikto</span>
+          <span class="tag tag-red"><span class="tag-dot tdot-red"></span>Burp Suite</span>
+          <span class="tag tag-blue"><span class="tag-dot tdot-blue"></span>Wazuh Agent</span>
+          <span class="tag tag-orange"><span class="tag-dot tdot-orange"></span>Kali Tools Suite</span>
+        </div>
+      </div>
+
+      <!-- Defender VM -->
+      <div class="vm-card defender">
+        <div class="vm-header">
+          <div class="vm-icon green">🛡️</div>
+          <div>
+            <div class="vm-title">UBUNTU SERVER</div>
+            <div class="vm-subtitle">DEFENDER + SOC NODE</div>
+          </div>
+          <div class="vm-ip ip-green">192.168.1.X</div>
+        </div>
+        <div class="services">
+          <span class="tag tag-blue"><span class="tag-dot tdot-blue"></span>Wazuh Server</span>
+          <span class="tag tag-blue"><span class="tag-dot tdot-blue"></span>Wazuh Indexer</span>
+          <span class="tag tag-blue"><span class="tag-dot tdot-blue"></span>Wazuh Manager</span>
+          <span class="tag tag-green"><span class="tag-dot tdot-green"></span>DVWA (Apache)</span>
+          <span class="tag tag-green"><span class="tag-dot tdot-green"></span>UFW Firewall</span>
+          <span class="tag tag-orange"><span class="tag-dot tdot-orange"></span>MySQL / PHP</span>
+          <span class="tag tag-purple"><span class="tag-dot tdot-purple"></span>Log Analysis</span>
+          <span class="tag tag-purple"><span class="tag-dot tdot-purple"></span>Alert Monitoring</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bridge Network Visual -->
+    <div class="bridge-bar">
+      <div class="bridge-label">⟷ &nbsp; VirtualBox Bridge Network &nbsp; ⟷</div>
+      <div class="bridge-detail">Both VMs share host network adapter · Real IP assignment · Realistic traffic simulation</div>
+    </div>
+
+    <!-- Traffic Flows -->
+    <div class="traffic-flows">
+      <div class="flow-card flow-attack">
+        <div class="flow-icon">⚔️</div>
+        <div class="flow-title">Attack Traffic</div>
+        <div class="flow-desc">Kali → Ubuntu<br>Scans · Exploits · Brute Force<br>Web Attacks on DVWA</div>
+      </div>
+      <div class="flow-card flow-log">
+        <div class="flow-icon">📡</div>
+        <div class="flow-title">Agent → SIEM</div>
+        <div class="flow-desc">Kali Wazuh Agent → Ubuntu<br>Attacker logs forwarded<br>to Wazuh Manager</div>
+      </div>
+      <div class="flow-card flow-alert">
+        <div class="flow-icon">🔔</div>
+        <div class="flow-title">Alert & Detect</div>
+        <div class="flow-desc">Wazuh Dashboard<br>Real-time alerts · IOCs<br>SOC Incident Reports</div>
+      </div>
+    </div>
+
+    <!-- Tech Stack -->
+    <div class="tech-stack">
+      <span class="tech-badge">VirtualBox 7.x</span>
+      <span class="tech-badge">Kali Linux 2024</span>
+      <span class="tech-badge">Ubuntu 22.04 LTS</span>
+      <span class="tech-badge">Wazuh 4.x SIEM</span>
+      <span class="tech-badge">DVWA</span>
+      <span class="tech-badge">UFW Firewall</span>
+      <span class="tech-badge">Apache2</span>
+      <span class="tech-badge">MySQL</span>
+      <span class="tech-badge">Nmap</span>
+      <span class="tech-badge">Metasploit</span>
+      <span class="tech-badge">SQLmap</span>
+      <span class="tech-badge">Hydra</span>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    SOC HOME LAB · BUILT FOR LEARNING · ATTACK · DETECT · REPORT
+  </div>
+
+</div>
+</body>
+</html>
