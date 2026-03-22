@@ -1,47 +1,29 @@
-To: Incident Responder
-From: SOC Analyst (L1)
-Date: 22 March 2026
+To ,
+Incident Responder.
 
-Subject: High Alert Activity from Single Host (192.168.1.15)
+Sir today We got the 3,873 alerts from the single IP that is 192.168.1.15,It was the suspicious.
+Details=>
+IP of Agent =>192.168.1.14
+IP Source of alerts =>192.168.1.15
+Alerts=>
+    -Vulnerability Scanning=> 95%  of alerts
+    -Process Injection =>2% of alerts
+    -Exploit Public fancing =>1% alerts
+    -File And Directory Discovery=>1% of alerts
+    -Sudo and Sudo catche=>0.5% of alerts
+    -Valid Accounts=>0.5% of alerts
 
-Sir,
+Time =>
+    Date=>22 Mar 2026
+    09:39:00 to 09:39:30 
+    These all alerts popuped in 30 seconds.
 
-Today we observed a total of 3,873 alerts coming from a single IP 192.168.1.15 within a very short time window (09:39:00 to 09:39:30), around 30 seconds. This activity looks suspicious and indicates automated scanning behavior.
+Threat Level =>
+    From the numbers of the alerts ,I treating this as a high level threat.
 
-Alert Details:
+Required Action =>
+    we should block that IP for the some time or wait for firewall to 
+    capture some more evidences so that we can permenently block it.
 
-Vulnerability Scanning: 95%
-Process Injection: 2%
-Exploit Public-Facing Application: 1%
-File and Directory Discovery: 1%
-Sudo/Sudo Cache Activity: 0.5%
-Valid Accounts Usage: 0.5%
-
-Analysis:
-Most of the alerts (95%) are related to vulnerability scanning in a very short time, which suggests use of an automated tool like Nmap or similar. Some alerts like process injection and valid account usage may indicate early exploitation attempts after scanning.
-
-Since the IP 192.168.1.15 is from the internal network, this activity could be either an authorized scan or a compromised system performing lateral movement.
-
-Threat Level:
-High
-
-Reason:
-
-High number of alerts in short duration
-Scanning with some suspicious activities
-Internal source increases risk
-
-Recommended Actions:
-
-Temporarily block or isolate the IP 192.168.1.15
-Verify whether this system is authorized for scanning
-Check running processes and login activity on the host
-Identify which systems were targeted
-Capture network traffic if possible for further analysis
-If malicious, proceed with permanent blocking and incident response
-
-Conclusion:
-This activity looks like automated reconnaissance with possible follow-up actions. Immediate investigation and containment is recommended.
-
-Thank you,
-SOC Analyst (L1)
+Thankyou Sir,
+Jr SOC l1
