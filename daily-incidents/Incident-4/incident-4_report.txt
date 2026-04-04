@@ -1,0 +1,63 @@
+To Incident Responder,
+From SOC-L1,
+4-Apr-2026.
+
+Sub:Multiple type of level 10,5,3 alerts are generated in the large number of quantity(9276) from single 
+    host 192.168.1.15.
+
+Sir,
+Today on 4-Apr.-2026, 
+Sharp at 02:14:00 -02:15:00
+The 9276 alerts are generated on the server.
+Server IP: 192.168.1.16
+Attacker Host IP: 192.168.1.15
+
+In this 1 minute the multiple types of alerts got generated which are as follows :
+    1)Vulnerability Scanning :95% 
+    2)Sudo and Sudo Catching :0.7% 
+    3)Process Injection      :2% 
+    4)Valid accounts         :0.7 %
+    5)Exploit Public Facing 
+        Aplications          :0.56% 
+    6)File and Directory 
+        Discovery            :0.56%
+
+This time the most alerts are of level 10,5 and 3.
+The IP of the attacker host is and internal subnet IP, So from thins I can say that the threat
+or the scan is performed via the internal host.
+According to my training session I , can say that the internal threat is more dangerous than 
+the external so we have to respond this as soon as possible.
+
+After further more analysis I found the rules that got voileted by the host are as follows :
+Apache,
+Web,
+Access_Denied,
+Accesslog,
+Web_scan,
+recon,
+attack,
+Local,
+Syslog,
+Apparmor.
+
+Rule Id's:
+52002,31101,31151,30305
+
+The source of the logs are as follows:
+/var/log/apache2/error.log
+/var/log/apache2/access.log
+journald
+
+Multiple server access request from the single IP ,web 404 error,etc
+Here from the alerts and its type there are chances that multiple types of attacks are happened as 
+SQL injection,Vulnerability Scanning using network maping tools,brute force,multiple alerts got generated
+when the person tried to find the multiple available rotes or open pathas,files and the foders ,etc.
+A attack got happened on our apache2(web server).
+
+Actions to be taken :
+Isolate the IP for some time and get monitored 
+If any more suspicios activities are happening again then must permenantly block it.
+or just block it using the Fire-wall in our case it is UFW(Uncomplicated firewall)
+
+Thank you,
+SOC-L1.
