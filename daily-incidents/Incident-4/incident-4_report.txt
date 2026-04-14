@@ -7,7 +7,7 @@ Sub:Multiple type of level 10,5,3 alerts are generated in the large number of qu
 
 Sir,
 Today on 4-Apr.-2026, 
-Sharp at 02:14:00 -02:15:00
+Sharp at 15:13:00 -15:20:00
 The 9276 alerts are generated on the server.
 Server IP: 192.168.1.16
 Attacker Host IP: 192.168.1.15
@@ -28,7 +28,7 @@ or the scan is performed via the internal host.
 According to my training session I , can say that the internal threat is more dangerous than 
 the external so we have to respond this as soon as possible.
 
-After further more analysis I found the rules that got voileted by the host are as follows :
+After further more analysis I found the rules that got violeted by the host are as follows :
 Apache,
 Web,
 Access_Denied,
