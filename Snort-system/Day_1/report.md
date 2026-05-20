@@ -80,7 +80,7 @@ During installation:
 The protected internal network range was configured.
 
 ```bash
-ipvar HOME_NET 192.168.1.0/24
+ipvar HOME_NET 192.168.1.1/24
 ```
 
 ---
