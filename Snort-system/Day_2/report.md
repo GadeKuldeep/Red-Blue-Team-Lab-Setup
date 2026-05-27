@@ -1,4 +1,3 @@
-````markdown
 # Snort IDS Integration with Wazuh SIEM
 
 ## Overview
@@ -108,5 +107,3 @@ Successfully:
 - Detect port scanning activity
 - Integrate Sysmon logs
 - Create incident response reports
-
-````
