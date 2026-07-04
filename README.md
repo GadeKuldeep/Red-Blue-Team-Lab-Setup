@@ -5,6 +5,7 @@
 ![SOC Lab](https://img.shields.io/badge/Type-SOC%20Home%20Lab-0d1117?style=for-the-badge&logo=shield&logoColor=00ff88)
 ![Wazuh](https://img.shields.io/badge/SIEM-Wazuh-0078D4?style=for-the-badge&logo=elasticsearch&logoColor=white)
 ![Snort](https://img.shields.io/badge/IDS-Snort-CC0000?style=for-the-badge&logo=snort&logoColor=white)
+![GoPhish](https://img.shields.io/badge/Phishing_Sim-GoPhish-00ADD8?style=for-the-badge&logo=gmail&logoColor=white)
 ![Kali Linux](https://img.shields.io/badge/Red_Team-Kali_Linux-557C94?style=for-the-badge&logo=kalilinux&logoColor=white)
 ![Ubuntu](https://img.shields.io/badge/Blue_Team-Ubuntu_Server-E95420?style=for-the-badge&logo=ubuntu&logoColor=white)
 ![MITRE](https://img.shields.io/badge/Framework-MITRE_ATT%26CK-red?style=for-the-badge)
@@ -14,7 +15,7 @@
 
 *Attacker launches → IDS detects → SIEM correlates → Analyst responds → Incident documented.*
 
-[View Incidents](#-incident-reports) · [See Detection Rules](#-custom-snort-rules) · [ATT&CK Mapping](#-mitre-attck-mapping)
+[View Incidents](#-incident-reports) · [See Detection Rules](#-custom-snort-rules) · [Phishing Simulation](#-phishing-simulation--gophish--wazuh) · [ATT&CK Mapping](#-mitre-attck-mapping)
 
 </div>
 
@@ -30,9 +31,16 @@
   ─ Hydra SSH brute force    ──►    SOC Analyst investigates
   ─ SQLmap injection               Incident report written
   ─ Metasploit exploit             MITRE ATT&CK technique mapped
+
+🎣 Phishing Simulation (GoPhish)          🔵 Blue Team (Wazuh)
+       │                                      │
+  Campaign built & sent              GoPhish logs ingested
+  ─ Email template                   Custom rules alert on
+  ─ Landing page                     campaign-level events
+  ─ Tracks opens/clicks       ──►    (warning/error/fatal tiers)
 ```
 
-> This lab mirrors the **exact daily workflow of a Tier 1/Tier 2 SOC Analyst** — from the moment an attacker fires a scan, to detection, triage, and documented incident response.
+> This lab mirrors the **exact daily workflow of a Tier 1/Tier 2 SOC Analyst** — from the moment an attacker fires a scan (or a phishing email lands), to detection, triage, and documented incident response.
 
 ---
 
@@ -53,7 +61,12 @@
 │   │  • Metasploit │                     │  ┌───────▼────────┐  │ │
 │   │  • Nikto      │                     │  │  Wazuh SIEM   │  │ │
 │   │  • Burp Suite │                     │  │  (dashboard)   │  │ │
-│   └───────────────┘                     │  └────────────────┘  │ │
+│   └───────────────┘                     │  └───────▲────────┘  │ │
+│                                         │          │ logs      │ │
+│                                         │  ┌───────┴────────┐  │ │
+│                                         │  │  GoPhish       │  │ │
+│                                         │  │  (campaigns)   │  │ │
+│                                         │  └────────────────┘  │ │
 │                                         │                      │ │
 │                                         │  Target: DVWA app    │ │
 │                                         │  (Apache2 + MySQL)   │ │
@@ -66,6 +79,7 @@
 | 🔴 Attacker | Kali Linux | `192.168.1.16` | Red Team — launches all attacks |
 | 🔵 Defender | Ubuntu Server | `192.168.1.14` | Blue Team — IDS + SIEM + SOC |
 | 🎯 Target | DVWA (on Ubuntu) | `192.168.1.14:80` | Vulnerable web app under attack |
+| 🎣 Phishing Sim | GoPhish (on Ubuntu) | `127.0.0.1:3333` (admin) / `:80` (phish server) | Human-risk simulation, logged into Wazuh |
 
 ---
 
@@ -92,6 +106,7 @@ Wazuh ingests the Snort alert logs and correlates them with system-level events 
 - Assigns severity levels and groups related events
 - Powers the SOC dashboard for analyst review
 - Connects network-layer alerts (Snort) to host-layer telemetry
+- Also ingests GoPhish's operational log via a custom decoder (see [Phishing Simulation](#-phishing-simulation--gophish--wazuh))
 
 > **Why Wazuh over Splunk?** Wazuh is open-source, runs on modest hardware, and is widely used in real-world SOCs. It also has native Snort integration — perfect for a constrained lab environment.
 
@@ -207,6 +222,84 @@ incident-report-template/
 
 ---
 
+## 🎣 Phishing Simulation — GoPhish + Wazuh
+
+Most of this lab focuses on network/host detection (Snort + Wazuh). This section adds the
+**human-risk layer**: simulating a phishing campaign end-to-end and proving that campaign
+activity — emails sent, opened, links clicked, credentials submitted — can be captured,
+logged, and alerted on, not just observed from the GoPhish dashboard alone.
+
+### Tech Stack
+
+| Component | Role |
+|---|---|
+| **GoPhish** | Open-source phishing simulation framework — builds and tracks the campaign |
+| **Wazuh Manager** | SIEM — ingests GoPhish logs and raises alerts via custom rules |
+| **Ubuntu Server** | Host running GoPhish and the Wazuh agent/manager |
+| **SQLite3** | Default GoPhish backend database (`gophish.db`) |
+
+### Setup Summary
+
+**1. GoPhish deployment** — deployed at `/opt/gophish`, run from source (`./gophish`):
+- Admin server: `https://127.0.0.1:3333` (TLS, self-signed cert)
+- Phishing server: `http://0.0.0.0:80` (serves landing pages to targets)
+- Backend: SQLite3 (`gophish.db`)
+- Logging: `/var/log/gophish.log` at `info` level
+
+**2. Campaign components built** — Email Template (pretext), Landing Page (fake
+credential-capture page), Sending Profile (SMTP delivery config), Target Group.
+
+**3. Campaign execution** — ran against a small internal target group and tracked
+results through GoPhish's built-in metrics:
+
+| Metric | Result |
+|---|---|
+| Emails Sent | 5 |
+| Emails Opened | 1 |
+| Links Clicked | 1 |
+| Data Submitted | 0 |
+| Reported as Phishing | 0 |
+
+**4. Wazuh integration** — GoPhish has no native SIEM output, so its log file was wired
+into Wazuh manually via `ossec.conf`, alongside the existing Apache and Snort sources:
+
+```xml
+<localfile>
+  <location>/var/log/gophish.log</location>
+  <log_format>syslog</log_format>
+</localfile>
+```
+
+**5. Custom Wazuh detection rules** — added in `local_rules.xml`, tiered by severity the
+same way the Snort rules are:
+
+| Rule ID | Level | Trigger | Purpose |
+|---|---|---|---|
+| 100100 | 0 | Any GoPhish log line | Base rule — groups all GoPhish events under one decoder |
+| 100101 | 3 | `log_level=warning` | Low-severity operational warnings |
+| 100102 | 7 | `log_level=error` | Errors during campaign operation |
+| 100103 | 12 | `log_level=fatal` | Fatal crashes — highest severity |
+
+### What This Demonstrates
+
+- Standing up and operating an open-source phishing simulation tool end-to-end
+- Bridging a non-native log source into an existing SIEM pipeline
+- Writing tiered custom detection rules (info → warning → error → fatal)
+- Thinking about phishing from both sides: as the "attacker" building the campaign, and
+  as the SOC analyst who needs operational visibility into the platform itself
+
+### Next Steps
+
+- Add a rule that fires specifically on a `clicked_link` or `submitted_data` event parsed
+  from GoPhish's structured logs, rather than only its operational log levels
+- Route the sending profile through a dedicated test mailbox rather than a personal address
+- Correlate GoPhish "link clicked" timestamps against Wazuh/Snort network alerts to check
+  for a corresponding network-layer signal
+
+*Full walkthrough: see `phishing-simulation/README.md`*
+
+---
+
 ## 🗺️ MITRE ATT&CK Mapping
 
 | Technique ID | Technique Name | Tool Used | Detected By |
@@ -217,6 +310,7 @@ incident-report-template/
 | T1059 | Command and Scripting Interpreter | Metasploit | Wazuh + community rules |
 | T1018 | Remote System Discovery | Nmap | Snort SID 1000002 |
 | T1046 | Network Service Discovery | Nmap | Snort SID 1000001 |
+| T1566 | Phishing | GoPhish (simulated) | GoPhish campaign metrics + Wazuh rules 100100–100103 |
 
 ---
 
@@ -235,6 +329,15 @@ Red-Blue-Team-Lab-Setup/
 │
 ├── wazuh/
 │   └── ossec-snort-config.xml       ← Wazuh ↔ Snort integration config
+│
+├── phishing-simulation/
+│   ├── README.md                    ← GoPhish + Wazuh integration walkthrough
+│   ├── config-notes/
+│   │   └── ossec-gophish-config.xml ← Wazuh ↔ GoPhish log integration
+│   ├── wazuh-rules/
+│   │   └── local_rules.xml          ← Custom GoPhish decoder + tiered alert rules
+│   └── campaign-results/
+│       └── first-campaign-report.md ← Sent/opened/clicked/submitted metrics
 │
 ├── daily-incidents/
 │   ├── Incident_1/                  ← 3,873 alerts · Vulnerability scanning
@@ -271,9 +374,11 @@ Red-Blue-Team-Lab-Setup/
 | **Incident Response** | 5 structured incident reports with IOCs, timelines, MITRE mapping |
 | **Threat Detection** | True/false positive triage, attack tool fingerprinting |
 | **Offensive Security** | Nmap, Hydra, SQLmap, Metasploit, Nikto, Burp Suite — live attack simulation |
+| **Phishing Simulation** | End-to-end GoPhish campaign build (template, landing page, sending profile) with tracked metrics |
+| **Log Source Integration** | Bridged a non-native log source (GoPhish) into Wazuh via custom `ossec.conf` + decoder rules |
 | **Network Forensics** | HTTP error pattern analysis, automated tool identification from traffic |
-| **Linux Administration** | Snort + Wazuh service config, UFW, Apache2, log management |
-| **MITRE ATT&CK** | 6 techniques mapped across all incidents |
+| **Linux Administration** | Snort + Wazuh + GoPhish service config, UFW, Apache2, log management |
+| **MITRE ATT&CK** | 7 techniques mapped across all incidents and the phishing simulation |
 
 ---
 
@@ -293,6 +398,9 @@ This single config block enables:
 - Cross-correlation with system auth and Apache logs
 - Unified alert timeline on the Wazuh dashboard
 
+> The same `ossec.conf` also carries a GoPhish `<localfile>` entry — see
+> [Phishing Simulation](#-phishing-simulation--gophish--wazuh) above.
+
 ---
 
 ## 🚀 Roadmap
@@ -303,8 +411,9 @@ This single config block enables:
 - [x] Wazuh + Snort SIEM integration
 - [x] Structured incident reporting (5 incidents documented)
 - [x] MITRE ATT&CK technique mapping across all incidents
+- [x] Phishing simulation lab — GoPhish + Wazuh log integration
+- [ ] Phishing detection depth — parse `clicked_link`/`submitted_data` events + YARA rules
 - [ ] Windows 10 endpoint + Sysmon telemetry *(hardware upgrade pending)*
-- [ ] Phishing detection lab — GoPhish + YARA rules
 - [ ] Threat hunting with Elastic Stack — ELK + Sigma rules
 - [ ] DFIR workstation — Autopsy + Volatility memory forensics
 
@@ -324,15 +433,25 @@ sudo tail -f /var/log/snort/alert
 
 # 4. Validate Snort config before running
 sudo snort -T -c /etc/snort/snort.conf -i enp0s3
+
+# 5. (Optional) Run the phishing simulation
+cd /opt/gophish && ./gophish
+# then browse to https://127.0.0.1:3333 to build/launch a campaign
 ```
 
 > Full lab setup guide: see `Snort-system/Day_1/report.md` and `Snort-system/Day_2/report.md`
+> Phishing walkthrough: see `phishing-simulation/README.md`
 
 ---
 
 ## ⚠️ Disclaimer
 
-This project is strictly for **educational purposes**. All attack simulations are performed within a controlled, isolated virtual lab environment. No testing was performed against external, production, or unauthorized systems. All tools are used in compliance with their respective terms of use.
+This project is strictly for **educational purposes**. All attack simulations — network,
+web application, and phishing — are performed within a controlled, isolated virtual lab
+environment against systems and accounts the author owns or has explicit authorization to
+test. No testing was performed against external, production, or unauthorized systems, and
+no phishing emails were sent to real, non-consenting recipients. All tools are used in
+compliance with their respective terms of use.
 
 ---
 
@@ -343,7 +462,7 @@ This project is strictly for **educational purposes**. All attack simulations ar
 Cybersecurity student building practical SOC analyst skills through hands-on home lab environments.
 
 [![GitHub](https://img.shields.io/badge/GitHub-GadeKuldeep-181717?style=flat-square&logo=github)](https://github.com/GadeKuldeep)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0A66C2?style=flat-square&logo=linkedin)](https://linkedin.com/in/kuldeep-gade-52598b2b0)
-[![TryHackMe](https://img.shields.io/badge/TryHackMe-Profile-212C42?style=flat-square&logo=tryhackme)](https://tryhackme.com/p/gadekuldeep25)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0A66C2?style=flat-square&logo=linkedin)](https://linkedin.com/in/kuldeepgade)
+[![TryHackMe](https://img.shields.io/badge/TryHackMe-Top_10--15%25-212C42?style=flat-square&logo=tryhackme)](https://tryhackme.com/p/gadekuldeep25)
 
 </div>
