@@ -1,0 +1,53 @@
+To SOC l2-l3
+
+Total Alerts=>10,243
+Timestamp:2026-07-10 18:55:22:826 to 2026-07-10 18:55:37:752
+Estimated time=15 sec
+
+saviorty:low | false positive 100%
+
+Ubuntu = 9606
+Windows= 429
+kali   = 208
+
+##Strted analysis with Ubuntu(due to high alerts /large server traffing from single IP)
+
+    Source IP(attacker) = 192.168.1.14
+    Server IP(ubuntu server) = 192.168.1.16 
+
+    Total = 9606 alerts
+    Vulnerability Scanning = 88.19 % of alerts
+    valid accounts =5.63%
+    sudo and sudo catching =5.12 %
+    process injection =2.05%
+    Exploit-public facing application =0.51%
+    files and directory discovery = 0.51%
+
+    Sorce location=/var/log/apache2/access.log
+
+    voileted rule groups are=>
+        web,accesslog,web_scan,recon
+    
+    ruleMitre ID : T1595,002
+    ruleMitreTechnique: Vulnerability Scanning
+
+    summary=>
+        Total 9606 alerts got generated in ust 15 sec,that indicated like DoS attack
+    but after further detection,I am can state that this is a vulnerability scan .
+    and It was done by the internal person I found it through the internal subnet mask IP.
+    And as we know that internal threat is more dangerous than the external so after doing further 
+    analysis I reached the IP and it was the IP of the our ethical hacker performing the 
+    vulnerability scan.
+
+    Conclusion:
+        All alerts on Server are False positive.
+
+## Windows analysis =>
+    all are normal login alerts with no threat detected .No true positive.
+
+Conclusion=>
+    All are false positive alets nothing break in this incident. 
+    All rules are working fine some snort rules needed refinement.
+    So I did some refinement to the snort rule and added 4 new custome rules, for more accurate detection
+
+From SOC .
